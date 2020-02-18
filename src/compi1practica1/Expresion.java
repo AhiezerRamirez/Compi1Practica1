@@ -7,8 +7,9 @@ public class Expresion {
     Token nombre;
     ArrayList<Token> parametros;
 
-    public Expresion(Token nombre) {
+    public Expresion(Token nombre, ArrayList<Token> parametos) {
         this.nombre = nombre;
+        this.parametros=parametos;
     }
 
     public Token getNombre() {
