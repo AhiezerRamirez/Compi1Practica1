@@ -20,8 +20,11 @@ public class Compi1Practica1 {
         
         Arbol arbol=new Arbol();
         Nodo root=arbol.construirArbol(array);
+        arbol.marckNullable(root);
+        arbol.ponerPrimeros(root);
+        arbol.ponerUltimos(root);
         arbol.Graficar(root);
-        System.out.println(root.left.right.right.lexema+" <- "+ root.lexema+" -> "+root.right.lexema);
+        System.out.println(root.getLeft().getPrimeros().toString()+ root.left.lexema+" <- "+ root.lexema +root.getPrimeros().toString()+" -> "+root.right.lexema);
     }
     
 }

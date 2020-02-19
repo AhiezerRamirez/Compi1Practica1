@@ -10,11 +10,12 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Stack;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 class Nodo{
-    Nodo left,right;
+    Nodo left,right,parent;
     String lexema;
     int i;
     String nombre;
@@ -24,6 +25,7 @@ class Nodo{
         this.lexema=lexema;
         this.left=null;
         this.right=null;
+        this.parent=null;
         this.primeros=new ArrayList<>();
         this.ultimos=new ArrayList<>();
     }
@@ -83,7 +85,6 @@ class Nodo{
     public void setUltimos(ArrayList<Integer> ultimos) {
         this.ultimos = ultimos;
     }
-    
 }
 public class Arbol {
     Nodo construirArbol(ArrayList<Token> prefix){
@@ -107,25 +108,39 @@ public class Arbol {
                 t2=st.pop();
                 t.right=t2;
                 t.left=t1;
+                t1.parent=t;
+                t2.parent=t;
                 t.nombre="a"+contador;
                 st.push(t);
             }else if(prefix.get(i).lexema.equals("*")||prefix.get(i).lexema.equals("+")||prefix.get(i).lexema.equals("?")){
                 contador++;
                 t=new Nodo(prefix.get(i).lexema);
+                if(prefix.get(i).lexema.equals("*")||prefix.get(i).lexema.equals("?"))
+                    t.anulable=true;
+                else
+                    t.anulable=false;
                 t1=st.pop();
                 t.right=t1;
+                t1.parent=t;
                 t.nombre="a"+contador;
                 st.push(t);
             }
         }
         Nodo t22=new Nodo("#");
         t22.setAnulable(false);
+        t22.setI(contador+1);
         t22.primeros.add(contador+1);
         t22.ultimos.add(contador+1);
+        contador++;
+        t22.nombre="a"+contador;
         t=st.peek();
         Nodo t32=new Nodo(".");
         t32.setRight(t22);
         t32.setLeft(t);
+        t22.parent=t32;
+        t.parent=t32;
+        contador++;
+        t32.nombre="a"+contador;
         st.pop();
         return t32;
     }
@@ -142,34 +157,98 @@ public class Arbol {
                     t.setAnulable(false);
                 else
                     t.setAnulable(true);
-            }else if(t.right.getLexema().equals("?")){
-                t.setAnulable(true);
-            }else if(t.getLexema().equals("*"))
-                t.setAnulable(true);
-            else if(t.getLexema().equals("+"))
-                t.setAnulable(false);
+            }
             marckNullable(t.left);
             marckNullable(t.right);
         }
     }
-    String codigo;
     
-    private void dibujar3(Nodo root){
+    void ponerPrimeros(Nodo t){
         
-        if(root!=null){
-            codigo+=root.nombre+"[label=\""+root.getLexema()+"\"] \n";
-            codigo+=root.nombre+" -> ";
-            dibujar3(root.getLeft());
+        if(t==null){
+           return; 
         }
-        if(root!=null){
-            codigo+=root.nombre+"[label=\""+root.getLexema()+"\"] \n";
-            codigo+=root.nombre+" -> ";
-            dibujar3(root.getRight());
+        ponerPrimeros(t.left);
+        ponerPrimeros(t.right);
+            if(t.lexema.equals(".")){
+                if(t.left.anulable==true){
+                TreeSet<Integer> auxarraylist=new TreeSet();
+                auxarraylist.addAll(t.left.getPrimeros());
+                auxarraylist.addAll(t.right.getPrimeros());
+                ArrayList<Integer> aux=new ArrayList<>(auxarraylist);
+                t.setPrimeros(aux);
+                }else
+                    t.setPrimeros(t.getLeft().getPrimeros());
+            }else if(t.lexema.equals("|")){
+                TreeSet<Integer> auxarraylist=new TreeSet();
+                auxarraylist.addAll(t.left.getPrimeros());
+                auxarraylist.addAll(t.right.getPrimeros());
+                ArrayList<Integer> aux=new ArrayList<>(auxarraylist);
+                t.setPrimeros(aux);
+            }else if(t.getLexema().equals("*")){
+                t.setPrimeros(t.getRight().getPrimeros());
+            }else if(t.getLexema().equals("+")){
+                t.setPrimeros(t.getRight().getPrimeros());
+            }else if(t.getLexema().equals("?")){
+                t.setPrimeros(t.getRight().getPrimeros());
+            }
+    }
+    
+    void ponerUltimos(Nodo t){
+        
+        if(t==null){
+           return; 
+        }
+        ponerUltimos(t.left);
+        ponerUltimos(t.right);
+            if(t.lexema.equals(".")){
+                if(t.right.anulable==true){
+                TreeSet<Integer> auxarraylist=new TreeSet();
+                auxarraylist.addAll(t.left.getUltimos());
+                auxarraylist.addAll(t.right.getUltimos());
+                ArrayList<Integer> aux=new ArrayList<>(auxarraylist);
+                t.setUltimos(aux);
+                }else
+                    t.setUltimos(t.getRight().getUltimos());
+            }else if(t.lexema.equals("|")){
+                TreeSet<Integer> auxarraylist=new TreeSet();
+                auxarraylist.addAll(t.left.getUltimos());
+                auxarraylist.addAll(t.right.getUltimos());
+                ArrayList<Integer> aux=new ArrayList<>(auxarraylist);
+                t.setUltimos(aux);
+            }else if(t.getLexema().equals("*")){
+                t.setUltimos(t.getRight().getUltimos());
+            }else if(t.getLexema().equals("+")){
+                t.setUltimos(t.getRight().getUltimos());
+            }else if(t.getLexema().equals("?")){
+                t.setUltimos(t.getRight().getUltimos());
+            }
+    }
+    
+    String s="";
+    void toDot(Nodo root){
+        if(root.left!=null){
+            s+=root.nombre+"[ label= \""+root.lexema+" \\n "+root.getAnulable()+" \\n Pri."+root.getPrimeros().toString()+" \\n Ult."+root.getUltimos().toString()+"\"];\n";
+            s+=root.nombre+" -> " + root.left.nombre+ ";\n";
+            toDot(root.getLeft());
+        }else{
+            s+=root.nombre+"[ label= \""+root.lexema+" \\n "+root.getAnulable()+" \\n Pri."+root.getPrimeros().toString()+" \\n Ult."+root.getUltimos().toString()+"\"];\n";
+            s+=root.parent.nombre +" -> "+root.nombre+";\n";
+        }
+        
+        if(root.right!=null){
+            s+=root.nombre+"[ label= \""+root.lexema+" \\n "+root.getAnulable()+" \\n Pri."+root.getPrimeros().toString()+" \\n Ult."+root.getUltimos().toString()+"\"];\n";
+            System.out.println(root.getPrimeros().toString());
+            s+=root.nombre+" -> " + root.right.nombre+ ";\n";
+            toDot(root.getRight());
+        }else{
+            s+=root.nombre+"[ label= \""+root.lexema+" \\n "+root.getAnulable()+" \\n Pri."+root.getPrimeros().toString()+" \\n Ult."+root.getUltimos().toString()+"\"];\n";
+            s+=root.parent.nombre +" -> "+root.nombre+";\n";
         }
     }
     
     void Graficar(Nodo root){
-        PrintWriter writer;
+    PrintWriter writer;
         try {
             writer = new PrintWriter("Arbol.txt", "UTF-8");
             writer.println("digraph g{");
@@ -177,12 +256,12 @@ public class Arbol {
                 writer.print("\n");
             if(root.left==null && root.right==null)
                 writer.print("\""+root.getLexema()+"\"");
-            else
-                dibujar3(root);
-            
-            writer.print(codigo);
+            else{
+                toDot(root);
+            }
+            writer.print(s);
             writer.print("\n}");
-            codigo="";
+            //codigo="";
             writer.close();
             
             
@@ -194,6 +273,5 @@ public class Arbol {
         } catch (UnsupportedEncodingException ex) {
             Logger.getLogger(Arbol.class.getName()).log(Level.SEVERE, null, ex);
         }
-
-    }
+}
 }
