@@ -26,6 +26,7 @@ public class Compi1Practica1 {
         arbol.obtenerHojas(root);
         arbol.sacarTablaSiguientes(root);
         arbol.llenarTablaSiguientes();
+        arbol.sacarEstados(root);
         arbol.Graficar(root);
         System.out.println(root.getLeft().getPrimeros().toString()+ root.left.lexema+" <- "+ root.lexema +root.getPrimeros().toString()+" -> "+root.right.lexema);
     }

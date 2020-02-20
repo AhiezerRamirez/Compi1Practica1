@@ -9,6 +9,8 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Stack;
 import java.util.TreeSet;
 import java.util.logging.Level;
@@ -88,7 +90,8 @@ class Nodo{
 }
 public class Arbol {
     TablaSiguientes tablasiguientes;
-    ArrayList<Estado> estados=new ArrayList<>();
+    Queue<Estado> estadosPendientes=new LinkedList<>();
+    Queue<Estado> estadosListos=new LinkedList<>();
     
     public Arbol(){
         this.tablasiguientes=new TablaSiguientes();
@@ -343,11 +346,28 @@ public class Arbol {
     //----------------------------------------TABLA DE ESTADOS INICIA------------------------------------------
     void sacarEstados(Nodo root){
         ArrayList primerosderoot=root.getPrimeros();
-        estados.add(new Estado("S0",root.getPrimeros()));
-        boolean salir=false;
-        while (salir) {            
-            
+        estadosPendientes.add(new Estado("S0",root.getPrimeros()));
+        System.out.println(root.getPrimeros().toString()+" Los primeros de root");
+        while (!estadosPendientes.isEmpty()) {            
+            Estado estadoAux=estadosPendientes.poll();
+            for (int i = 0; i < estadoAux.getTransisiones().size(); i++) {
+                for (int j = 0; j < this.tablasiguientes.getI().size(); j++) {
+                    if(this.tablasiguientes.getI().get(j).getI()==estadoAux.getTransisiones().get(i)){
+                        if(this.tablasiguientes.getI().get(j).getSig().toString().equals(estadoAux.getTransisiones().toString())){
+                            
+                        }else{
+                            estadosPendientes.add(new Estado("S"+Integer.toString(i+1), this.tablasiguientes.getI().get(j).getSig()));
+                        }
+                    }
+                    
+                }
+            }
+            estadosListos.add(estadoAux);
         }
+        
+        for (Estado item: estadosListos) {
+		System.out.println(item.estado+" "+item.getTransisiones().toString());
+            }
     }
     
     //-----------------------------------------TABLA DE ESTADOS TERMINA---------------------------------------
