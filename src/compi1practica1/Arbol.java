@@ -87,6 +87,12 @@ class Nodo{
     }
 }
 public class Arbol {
+    TablaSiguientes tablasiguientes;
+    ArrayList<Estado> estados=new ArrayList<>();
+    
+    public Arbol(){
+        this.tablasiguientes=new TablaSiguientes();
+    }
     Nodo construirArbol(ArrayList<Token> prefix){
         Stack <Nodo> st=new Stack();
         Nodo t,t1,t2;
@@ -225,6 +231,66 @@ public class Arbol {
             }
     }
     
+    void obtenerHojas(Nodo root){
+        
+            if(root.getLeft()==null && root.getRight()==null){
+                tablasiguientes.i.add(new tablaFinal(root.getI(),root.getLexema()));
+                return;
+            }
+        obtenerHojas(root.getRight());
+        if(root.getLeft()!=null)
+        obtenerHojas(root.getLeft());
+        
+    }
+    void sacarTablaSiguientes(Nodo root){
+        if(root==null)
+            return;
+        sacarTablaSiguientes(root.getLeft());
+        sacarTablaSiguientes(root.getRight());
+        switch (root.getLexema()) {
+            case ".":
+                this.tablasiguientes.sigDi.add(new ColunmaSiguiente(root.getLeft().getUltimos(),root.getRight().getPrimeros()));
+                //this.tablasiguientes.setSigDi(root.getRight().getPrimeros());
+                break;
+            case "*":
+                this.tablasiguientes.getSigDi().add(new ColunmaSiguiente(root.getUltimos(), root.getPrimeros()));
+                break;
+            case "+":
+                this.tablasiguientes.getSigDi().add(new ColunmaSiguiente(root.getUltimos(), root.getPrimeros()));
+                break;
+            default:
+                break;
+        }
+    }
+    
+    void llenarTablaSiguientes(){
+        try {
+            PrintWriter archivo=new PrintWriter("TablaSiguientes.txt", "UTF-8");
+            archivo.print("digraph G  {\n node [shape=record, fontname=\"Arial\"];\n");
+            String codigo="set1 [label = \"{i ";
+            this.tablasiguientes.sacarTabla();
+            for (int i = 0; i < tablasiguientes.i.size(); i++) {
+                codigo+="|"+tablasiguientes.i.get(i).lexema+" "+tablasiguientes.i.get(i).i;   
+            }
+            codigo+=" }| { Sig(i) ";
+            for (int i = 0; i < tablasiguientes.i.size(); i++) {
+                codigo+="| ";
+                for (int j = 0; j < tablasiguientes.i.get(i).sig.size(); j++) {
+                    codigo+=tablasiguientes.i.get(i).getSig().get(j);
+                }
+                
+            }
+            codigo+=" }\" ];\n}";
+            archivo.print(codigo);
+            archivo.close();
+            codigo="";
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(Arbol.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(Arbol.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
     String s="";
     void toDot(Nodo root){
         if(root.left!=null){
@@ -274,4 +340,149 @@ public class Arbol {
             Logger.getLogger(Arbol.class.getName()).log(Level.SEVERE, null, ex);
         }
 }
+    //----------------------------------------TABLA DE ESTADOS INICIA------------------------------------------
+    void sacarEstados(Nodo root){
+        ArrayList primerosderoot=root.getPrimeros();
+        estados.add(new Estado("S0",root.getPrimeros()));
+        boolean salir=false;
+        while (salir) {            
+            
+        }
+    }
+    
+    //-----------------------------------------TABLA DE ESTADOS TERMINA---------------------------------------
+}
+
+class TablaSiguientes{
+    ArrayList<tablaFinal>i;
+    ArrayList<ColunmaSiguiente> sigDi;
+
+    public TablaSiguientes() {
+        this.i=new ArrayList<>();
+        this.sigDi=new ArrayList<>();
+    }
+    
+    void sacarTabla(){
+        for (int j = 0; j < this.i.size(); j++) {
+            TreeSet<Integer> auxsiguientes=new TreeSet<>();
+            tablaFinal auxtabla=this.i.get(j);
+            for (int k = 0; k < this.sigDi.size() ; k++) {
+                ColunmaSiguiente auxcolumna=this.sigDi.get(k);
+                for (int l = 0; l < auxcolumna.LC1.size(); l++) {
+                    if(auxtabla.i==auxcolumna.LC1.get(l)){
+                        auxsiguientes.addAll(auxcolumna.FC2);
+                    }
+                }
+            }
+            ArrayList<Integer>auxsigya=new ArrayList<>(auxsiguientes);
+            this.i.get(j).setSig(auxsigya);
+        }
+    }
+
+    public ArrayList<tablaFinal> getI() {
+        return i;
+    }
+
+    public void setI(ArrayList<tablaFinal> i) {
+        this.i = i;
+    }
+
+    
+
+
+    public ArrayList<ColunmaSiguiente> getSigDi() {
+        return sigDi;
+    }
+
+    public void setSigDi(ArrayList<ColunmaSiguiente> sigDi) {
+        this.sigDi = sigDi;
+    }
+    
+    
+}
+
+class ColunmaSiguiente{
+    
+    ArrayList<Integer> LC1,FC2;
+
+    public ColunmaSiguiente(ArrayList<Integer> lci,ArrayList<Integer> fc2) {
+        this.LC1=lci;
+        this.FC2=fc2;
+    }
+
+    public ArrayList<Integer> getLC1() {
+        return LC1;
+    }
+
+    public void setLC1(ArrayList<Integer> LC1) {
+        this.LC1 = LC1;
+    }
+
+    public ArrayList<Integer> getFC2() {
+        return FC2;
+    }
+
+    public void setFC2(ArrayList<Integer> FC2) {
+        this.FC2 = FC2;
+    }
+    
+}
+
+class tablaFinal{
+    int i;
+    String lexema;
+    ArrayList<Integer> sig;
+
+    public tablaFinal(int nodo,String lexeman) {
+        this.i=nodo;
+        this.lexema=lexeman;
+        this.sig=new ArrayList<>();
+    }
+
+    public int getI() {
+        return i;
+    }
+
+    public void setI(int i) {
+        this.i = i;
+    }
+
+    public ArrayList<Integer> getSig() {
+        return sig;
+    }
+
+    public void setSig(ArrayList<Integer> sig) {
+        this.sig = sig;
+    }
+}
+
+class Estado{
+    String estado;
+    ArrayList<Integer> transisiones;
+
+    public Estado(String estado) {
+        this.estado=estado;
+        
+    }
+    public Estado(String estado, ArrayList<Integer> trans){
+        this.estado=estado;
+        this.transisiones=trans;
+    }
+
+    public String getEstado() {
+        return estado;
+    }
+
+    public void setEstado(String estado) {
+        this.estado = estado;
+    }
+
+    public ArrayList<Integer> getTransisiones() {
+        return transisiones;
+    }
+
+    public void setTransisiones(ArrayList<Integer> transisiones) {
+        this.transisiones = transisiones;
+    }
+    
 }

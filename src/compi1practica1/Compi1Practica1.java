@@ -23,6 +23,9 @@ public class Compi1Practica1 {
         arbol.marckNullable(root);
         arbol.ponerPrimeros(root);
         arbol.ponerUltimos(root);
+        arbol.obtenerHojas(root);
+        arbol.sacarTablaSiguientes(root);
+        arbol.llenarTablaSiguientes();
         arbol.Graficar(root);
         System.out.println(root.getLeft().getPrimeros().toString()+ root.left.lexema+" <- "+ root.lexema +root.getPrimeros().toString()+" -> "+root.right.lexema);
     }
