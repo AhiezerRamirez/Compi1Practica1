@@ -89,12 +89,16 @@ class Nodo{
     }
 }
 public class Arbol {
-    TablaSiguientes tablasiguientes;
-    Queue<Estado> estadosPendientes=new LinkedList<>();
-    Queue<Estado> estadosListos=new LinkedList<>();
+    TablaSiguientes tablasiguientes;                                    //esta es para la tabla siguientes
+    Stack<Estado> estadosPendientes=new Stack<>();
+    Stack<Estado> estadosListos=new Stack<>();
+    ArrayList<Estado>listaestadosListos=new ArrayList<>(estadosListos);
+    ArrayList<TablaEstados> listaEstados;                               //estos son los estados para el autómata
+    Grafo grafo=new Grafo();
     
     public Arbol(){
         this.tablasiguientes=new TablaSiguientes();
+        this.listaEstados=new ArrayList<>();
     }
     Nodo construirArbol(ArrayList<Token> prefix){
         Stack <Nodo> st=new Stack();
@@ -346,31 +350,104 @@ public class Arbol {
     //----------------------------------------TABLA DE ESTADOS INICIA------------------------------------------
     void sacarEstados(Nodo root){
         ArrayList primerosderoot=root.getPrimeros();
-        estadosPendientes.add(new Estado("S0",root.getPrimeros()));
+        estadosPendientes.add(new Estado("S0",root.getPrimeros(),root.getPrimeros()));
         System.out.println(root.getPrimeros().toString()+" Los primeros de root");
+        
         while (!estadosPendientes.isEmpty()) {            
-            Estado estadoAux=estadosPendientes.poll();
+            Estado estadoAux=estadosPendientes.pop();
             for (int i = 0; i < estadoAux.getTransisiones().size(); i++) {
                 for (int j = 0; j < this.tablasiguientes.getI().size(); j++) {
                     if(this.tablasiguientes.getI().get(j).getI()==estadoAux.getTransisiones().get(i)){
                         if(this.tablasiguientes.getI().get(j).getSig().toString().equals(estadoAux.getTransisiones().toString())){
-                            
+                            estadoAux.getDetonadores().add(estadoAux.getTransisiones().get(i));
                         }else{
-                            estadosPendientes.add(new Estado("S"+Integer.toString(i+1), this.tablasiguientes.getI().get(j).getSig()));
+                            ArrayList<Integer> listaaux=new ArrayList<>();
+                            listaaux.add(estadoAux.getTransisiones().get(i));
+                            listaEstados.add(new TablaEstados(estadoAux.getEstado(), "S"+Integer.toString(i+1), listaaux));
+                            estadosPendientes.push(new Estado("S"+Integer.toString(i+1), this.tablasiguientes.getI().get(j).getSig(),listaaux));
                         }
                     }
                     
                 }
             }
-            estadosListos.add(estadoAux);
+            estadosListos.push(estadoAux);
         }
         
-        for (Estado item: estadosListos) {
-		System.out.println(item.estado+" "+item.getTransisiones().toString());
+        for (Estado item: listaestadosListos) {
+		System.out.println(item.estado+" "+item.getDetonadores().toString());
             }
     }
     
+    void GraficarTablaEstados(){
+        PrintWriter archivo;
+        try {
+            ArrayList<Estado>listauxEstados=new ArrayList<>(estadosListos);
+            
+            archivo = new PrintWriter("TablaTransiciones.txt", "UTF-8");
+            archivo.print("digraph G  {\n node [shape=record, fontname=\"Arial\"];\n");
+            String codigo="set1 [label = \"{ Estados ";
+            for (int i = 0; i < listauxEstados.size()-1; i++) {
+                codigo+="| "+listauxEstados.get(i).getEstado();
+            }
+            codigo+=" } ";
+            for (int i = 0; i < tablasiguientes.i.size(); i++) {
+                codigo+="| {";
+                codigo+=tablasiguientes.i.get(i).lexema+" "+tablasiguientes.i.get(i).i;
+                for (int j = 0; j < listauxEstados.size(); j++) {
+                    for (int k = 0; k < listauxEstados.get(j).getDetonadores().size(); k++) {
+                        if(listauxEstados.get(j).getDetonadores().get(k)==tablasiguientes.i.get(i).getI()){
+                            codigo+="| "+listauxEstados.get(j).getDetonadores().get(k);
+                        }else{
+                            //codigo+="| ";
+                        }
+                    }
+                    
+                }
+                codigo+="  }";
+            }
+            codigo+=" }\" ];\n}";
+            archivo.print(codigo);
+            archivo.close();
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(Arbol.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(Arbol.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+        }
+    }
+    
+    void verEstadoFinales(Nodo root){
+        int estadoaceptacion;
+        Nodo aux=root.getRight();
+        estadoaceptacion=root.getI();
+        for (int i = 0; i < this.listaestadosListos.size(); i++) {
+            for (int j = 0; j < this.listaestadosListos.get(i).getTransisiones().size(); j++) {
+                if(this.listaestadosListos.get(i).getTransisiones().contains(estadoaceptacion)){
+                    this.listaestadosListos.get(i).setAcceptacion(true);
+                }
+            }
+        }
+    }
+    void verEstadosFinalesGrafo(Nodo root){
+        int estadoaceptacion;
+        Nodo aux=root.getRight();
+        estadoaceptacion=aux.getI();
+        for (int i = 0; i < this.listaEstados.size(); i++) {
+            if(this.listaEstados.get(i).getTransiciones().contains(estadoaceptacion)){
+                this.listaEstados.get(i).setEstadoacceptacionI(true);
+                //System.out.println(estadoaceptacion);
+            }
+        }
+    }
     //-----------------------------------------TABLA DE ESTADOS TERMINA---------------------------------------
+    
+    void HacerGrafo(){
+        for (int i = 0; i < this.listaEstados.size(); i++) {
+            TablaEstados aux=this.listaEstados.get(i);
+            System.out.println(aux.getEstadoInicio()+" "+ aux.isEstadoacceptacionI()+" "+aux.getEstadoFinal()+" "+aux.isEstadoacceptacionF()+" "+aux.getTransiciones().toString());
+            grafo.Agregar(aux.getEstadoInicio(), aux.isEstadoacceptacionI(), aux.getEstadoFinal(), aux.isEstadoacceptacionF(),aux.getTransiciones().toString());
+        }
+    }
 }
 
 class TablaSiguientes{
@@ -406,10 +483,7 @@ class TablaSiguientes{
     public void setI(ArrayList<tablaFinal> i) {
         this.i = i;
     }
-
     
-
-
     public ArrayList<ColunmaSiguiente> getSigDi() {
         return sigDi;
     }
@@ -478,15 +552,34 @@ class tablaFinal{
 
 class Estado{
     String estado;
+    ArrayList<Integer> detonadores;
     ArrayList<Integer> transisiones;
+    boolean acceptacion;
 
     public Estado(String estado) {
         this.estado=estado;
         
     }
-    public Estado(String estado, ArrayList<Integer> trans){
+    public Estado(String estado, ArrayList<Integer> trans,ArrayList<Integer> provocado){
         this.estado=estado;
         this.transisiones=trans;
+        this.detonadores=provocado;
+    }
+
+    public boolean isAcceptacion() {
+        return acceptacion;
+    }
+
+    public void setAcceptacion(boolean acceptacion) {
+        this.acceptacion = acceptacion;
+    }
+
+    public ArrayList<Integer> getDetonadores() {
+        return detonadores;
+    }
+
+    public void setDetonadores(ArrayList<Integer> detonadores) {
+        this.detonadores = detonadores;
     }
 
     public String getEstado() {
@@ -505,4 +598,56 @@ class Estado{
         this.transisiones = transisiones;
     }
     
+}
+
+class TablaEstados{
+    String estadoInicio, estadoFinal;
+    boolean estadoacceptacionI,estadoacceptacionF;
+    ArrayList<Integer> transiciones;
+
+    public TablaEstados(String inicio,String esfinal, ArrayList<Integer> trans) {
+        this.estadoInicio=inicio;
+        this.estadoFinal=esfinal;
+        this.transiciones=trans;
+        this.estadoacceptacionI=false;
+    }
+
+    public String getEstadoInicio() {
+        return estadoInicio;
+    }
+
+    public void setEstadoInicio(String estadoInicio) {
+        this.estadoInicio = estadoInicio;
+    }
+
+    public String getEstadoFinal() {
+        return estadoFinal;
+    }
+
+    public void setEstadoFinal(String estadoFinal) {
+        this.estadoFinal = estadoFinal;
+    }
+
+    public ArrayList<Integer> getTransiciones() {
+        return transiciones;
+    }
+
+    public void setTransiciones(ArrayList<Integer> transiciones) {
+        this.transiciones = transiciones;
+    }
+     public boolean isEstadoacceptacionI() {
+        return estadoacceptacionI;
+    }
+
+    public void setEstadoacceptacionI(boolean estadoacceptacionI) {
+        this.estadoacceptacionI = estadoacceptacionI;
+    }
+
+    public boolean isEstadoacceptacionF() {
+        return estadoacceptacionF;
+    }
+
+    public void setEstadoacceptacionF(boolean estadoacceptacionF) {
+        this.estadoacceptacionF = estadoacceptacionF;
+    }
 }
