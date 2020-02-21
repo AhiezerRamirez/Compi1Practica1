@@ -9,6 +9,7 @@ public class AnalizadorLexico {
     char auxpalabra;
     ArrayList<Token> tokens=new ArrayList<>();
     ArrayList<Error> errores=new ArrayList<>();
+    Core auxcore;
     public AnalizadorLexico(){}
     
     public ArrayList<Token> analizar(String[] cadena){
@@ -153,14 +154,27 @@ public class AnalizadorLexico {
                 }
             }
         }
-        Core auxcore=new Core(tokens);
+        auxcore=new Core(tokens);
         auxcore.serparaComponentes();
+        auxcore.hacerMetodoArbol();
+        
         /*for (int k = 0; k < tokens.size(); k++) {
             Token auxtoken = tokens.get(k);
             System.out.println(auxtoken.tipo+" "+auxtoken.lexema);
             
         }*/
-        return null;
+        return tokens;
     }
+    
+    public ArrayList<String>getRutas(){
+        ArrayList<String> auxrutas=auxcore.getRutas();
+        return auxrutas;
+    }
+    
+    public ArrayList<Expresion>getExpresiones(){
+        ArrayList<Expresion> auxrutas=auxcore.getExpresiones();
+        return auxrutas;
+    }
+    
   
 }

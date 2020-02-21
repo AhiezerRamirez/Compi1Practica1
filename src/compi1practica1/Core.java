@@ -8,6 +8,8 @@ public class Core {
     ArrayList<Conjunto> conjuntos;
     ArrayList<Expresion> expresiones;
     ArrayList<Lexema> lexemas;
+    Arbol metodoArbol;
+    ArrayList<String>rutas;
     
     Core(ArrayList<Token> tokens){
         this.tokens=tokens;
@@ -15,6 +17,8 @@ public class Core {
         this.conjuntos=new ArrayList<>();
         this.expresiones=new ArrayList<>();
         this.lexemas=new ArrayList<>();
+        this.rutas=new ArrayList<>();
+        
     }
     void serparaComponentes(){
         ArrayList<Token> auxconjutos=new ArrayList<>();                 //Para serparac conjuntos de toda la lista de tokens
@@ -60,20 +64,59 @@ public class Core {
             if(this.auxtokens.get(i).lexema.equals("->")){
                 Token auxtoken=this.auxtokens.get(i-1);i++;
                 ArrayList<Token> auxlistaElementos=new ArrayList();
-                while (!this.auxtokens.get(i).lexema.equals(";")) {                    
-                    auxlistaElementos.add(this.auxtokens.get(i));
-                    i++;
+                while (!this.auxtokens.get(i).lexema.equals(";")) {
+                    if(this.auxtokens.get(i).lexema.equals("{")||this.auxtokens.get(i).lexema.equals("}"))
+                        i++;
+                    else{
+                        auxlistaElementos.add(this.auxtokens.get(i));
+                        i++;
+                    }
                 }
                 this.expresiones.add(new Expresion(auxtoken,auxlistaElementos));
             }
         }
         
-        for (int i = 0; i < this.expresiones.size(); i++) {
-            System.out.println(this.expresiones.get(i).nombre.lexema);
+        /*for (int i = 0; i < this.expresiones.size(); i++) {
+            System.out.println(this.expresiones.get(i).nombre.lexema+" "+ this.expresiones.get(i).getParametros().size());
             for (int j = 0; j < this.expresiones.get(i).parametros.size(); j++) {
                 System.out.print(this.expresiones.get(i).parametros.get(j).lexema);
             }
+            System.out.println("");
+        }*/
+    }
+    
+    void hacerMetodoArbol(){
+        int ii=0;
+        //try {
+        for (int i = 0; i < this.expresiones.size(); i++) {
+            ii=i;
+            metodoArbol=new Arbol(this.expresiones.get(i).getNombre().lexema);
+            Expresion auxexpresion=this.expresiones.get(i);
+            System.out.println(auxexpresion.getNombre().lexema);
+            Nodo root=metodoArbol.construirArbol(auxexpresion.getParametros());
+            metodoArbol.inroden(root);
+            metodoArbol.marckNullable(root);
+            metodoArbol.ponerPrimeros(root);
+            metodoArbol.ponerUltimos(root);
+            metodoArbol.obtenerHojas(root);
+            metodoArbol.sacarTablaSiguientes(root);
+            metodoArbol.Graficar(root,Integer.toString(i));
+            metodoArbol.graficarTablaSiguientes(Integer.toString(i));
+            metodoArbol.sacarEstados(root);
+            metodoArbol.GraficarTablaEstados(Integer.toString(i));
+            metodoArbol.verEstadosFinalesGrafo(root);
+            
+            //arbol.HacerGrafo();
+            //metodoArbol.Graficar(root,Integer.toString(i));
+            rutas.add("Expresion"+i);
         }
+        //} catch (Exception e) {
+            System.out.println("Expresion: " +ii+" no acceptada");
+        //}
+    }
+    
+    public ArrayList<String> getRutas(){
+        return rutas;
     }
 
     public ArrayList<Token> getTokens() {

@@ -8,7 +8,7 @@ public class Compi1Practica1 {
 
     public static void main(String[] args) {
         // TODO code application logic here
-        String cadenaprueba=".L*|LD";
+        /*String cadenaprueba=".L*|LD";
         char auxchar[]=cadenaprueba.toCharArray();
         ArrayList<Token> array=new ArrayList<>();
         array.add(new Token(Token.Tipo.SIGNO, Character.toString(auxchar[0]), 2, 1, true));
@@ -18,7 +18,7 @@ public class Compi1Practica1 {
         array.add(new Token(Token.Tipo.SIGNO, Character.toString(auxchar[4]), 2, 1, false));
         array.add(new Token(Token.Tipo.SIGNO, Character.toString(auxchar[5]), 2, 1, false));
         
-        Arbol arbol=new Arbol();
+        Arbol arbol=new Arbol("prueba");
         Nodo root=arbol.construirArbol(array);
         arbol.marckNullable(root);
         arbol.ponerPrimeros(root);
@@ -32,6 +32,7 @@ public class Compi1Practica1 {
         arbol.HacerGrafo();
         arbol.Graficar(root);
         System.out.println(root.getLeft().getPrimeros().toString()+ root.left.lexema+" <- "+ root.lexema +root.getPrimeros().toString()+" -> "+root.right.lexema);
+*/
     }
     
 }

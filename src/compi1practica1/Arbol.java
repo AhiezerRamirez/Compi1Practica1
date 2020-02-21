@@ -6,11 +6,10 @@
 package compi1practica1;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.Stack;
 import java.util.TreeSet;
 import java.util.logging.Level;
@@ -23,6 +22,7 @@ class Nodo{
     String nombre;
     Boolean anulable;
     ArrayList<Integer> primeros, ultimos;
+    boolean operador;
     Nodo(String lexema){
         this.lexema=lexema;
         this.left=null;
@@ -30,6 +30,7 @@ class Nodo{
         this.parent=null;
         this.primeros=new ArrayList<>();
         this.ultimos=new ArrayList<>();
+        this.operador=false;
     }
 
     public Nodo getLeft() {
@@ -89,6 +90,7 @@ class Nodo{
     }
 }
 public class Arbol {
+    String nombreExpresion;
     TablaSiguientes tablasiguientes;                                    //esta es para la tabla siguientes
     Stack<Estado> estadosPendientes=new Stack<>();
     Stack<Estado> estadosListos=new Stack<>();
@@ -96,9 +98,10 @@ public class Arbol {
     ArrayList<TablaEstados> listaEstados;                               //estos son los estados para el autómata
     Grafo grafo=new Grafo();
     
-    public Arbol(){
+    public Arbol(String nombre){
         this.tablasiguientes=new TablaSiguientes();
         this.listaEstados=new ArrayList<>();
+        this.nombreExpresion=nombre;
     }
     Nodo construirArbol(ArrayList<Token> prefix){
         Stack <Nodo> st=new Stack();
@@ -121,6 +124,7 @@ public class Arbol {
                 t2=st.pop();
                 t.right=t2;
                 t.left=t1;
+                t.operador=true;
                 t1.parent=t;
                 t2.parent=t;
                 t.nombre="a"+contador;
@@ -132,7 +136,9 @@ public class Arbol {
                     t.anulable=true;
                 else
                     t.anulable=false;
+                    
                 t1=st.pop();
+                t.operador=true;
                 t.right=t1;
                 t1.parent=t;
                 t.nombre="a"+contador;
@@ -158,9 +164,19 @@ public class Arbol {
         return t32;
     }
     
+    void inroden(Nodo root){
+        if(root==null)
+            return;
+        inroden(root.getRight());
+        System.out.print(root.getLexema());
+        inroden(root.getLeft());
+    }
+    
     void marckNullable(Nodo t){
         if(t!=null){
-            if(t.lexema.equals(".")){
+            marckNullable(t.left);
+            marckNullable(t.right);
+            if(t.lexema.equals(".")&& t.operador==true ){
                 if(t.right.anulable==true&&t.left.anulable==true){
                  t.setAnulable(true);
                 }else
@@ -171,8 +187,6 @@ public class Arbol {
                 else
                     t.setAnulable(true);
             }
-            marckNullable(t.left);
-            marckNullable(t.right);
         }
     }
     
@@ -183,7 +197,8 @@ public class Arbol {
         }
         ponerPrimeros(t.left);
         ponerPrimeros(t.right);
-            if(t.lexema.equals(".")){
+            if(t.operador==true){
+                if(t.lexema.equals(".")&&t.operador==true){
                 if(t.left.anulable==true){
                 TreeSet<Integer> auxarraylist=new TreeSet();
                 auxarraylist.addAll(t.left.getPrimeros());
@@ -205,6 +220,7 @@ public class Arbol {
             }else if(t.getLexema().equals("?")){
                 t.setPrimeros(t.getRight().getPrimeros());
             }
+        }
     }
     
     void ponerUltimos(Nodo t){
@@ -214,7 +230,8 @@ public class Arbol {
         }
         ponerUltimos(t.left);
         ponerUltimos(t.right);
-            if(t.lexema.equals(".")){
+            if(t.operador==true){
+                if(t.lexema.equals(".")&&t.operador==true){
                 if(t.right.anulable==true){
                 TreeSet<Integer> auxarraylist=new TreeSet();
                 auxarraylist.addAll(t.left.getUltimos());
@@ -236,6 +253,7 @@ public class Arbol {
             }else if(t.getLexema().equals("?")){
                 t.setUltimos(t.getRight().getUltimos());
             }
+        }
     }
     
     void obtenerHojas(Nodo root){
@@ -254,7 +272,8 @@ public class Arbol {
             return;
         sacarTablaSiguientes(root.getLeft());
         sacarTablaSiguientes(root.getRight());
-        switch (root.getLexema()) {
+        if(root.operador==true){
+            switch (root.getLexema()) {
             case ".":
                 this.tablasiguientes.sigDi.add(new ColunmaSiguiente(root.getLeft().getUltimos(),root.getRight().getPrimeros()));
                 //this.tablasiguientes.setSigDi(root.getRight().getPrimeros());
@@ -268,11 +287,12 @@ public class Arbol {
             default:
                 break;
         }
+        }
     }
     
-    void llenarTablaSiguientes(){
+    void graficarTablaSiguientes(String numero){
         try {
-            PrintWriter archivo=new PrintWriter("TablaSiguientes.txt", "UTF-8");
+            PrintWriter archivo=new PrintWriter("TablaSiguientes"+numero+".dot", "UTF-8");
             archivo.print("digraph G  {\n node [shape=record, fontname=\"Arial\"];\n");
             String codigo="set1 [label = \"{i ";
             this.tablasiguientes.sacarTabla();
@@ -291,9 +311,15 @@ public class Arbol {
             archivo.print(codigo);
             archivo.close();
             codigo="";
+            ProcessBuilder processBuilder = new ProcessBuilder();
+            processBuilder.command("cmd.exe", "/c","dot TablaSiguientes"+numero+".dot -Tpng -o TablaSiguientes"+numero+".png");
+            processBuilder.start();
+            
         } catch (FileNotFoundException ex) {
             Logger.getLogger(Arbol.class.getName()).log(Level.SEVERE, null, ex);
         } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(Arbol.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
             Logger.getLogger(Arbol.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
@@ -320,10 +346,10 @@ public class Arbol {
         }
     }
     
-    void Graficar(Nodo root){
+    void Graficar(Nodo root,String numero){
     PrintWriter writer;
         try {
-            writer = new PrintWriter("Arbol.txt", "UTF-8");
+            writer = new PrintWriter("Arbol"+numero+".dot", "UTF-8");
             writer.println("digraph g{");
             if(root==null)
                 writer.print("\n");
@@ -336,14 +362,14 @@ public class Arbol {
             writer.print("\n}");
             //codigo="";
             writer.close();
-            
-            
-            
-            
-            
+            ProcessBuilder processBuilder = new ProcessBuilder();
+            processBuilder.command("cmd.exe", "/c","dot Arbol"+numero+".dot -Tpng -o Arbol"+numero+".png");
+            processBuilder.start();
         } catch (FileNotFoundException ex) {
             Logger.getLogger(Arbol.class.getName()).log(Level.SEVERE, null, ex);
         } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(Arbol.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
             Logger.getLogger(Arbol.class.getName()).log(Level.SEVERE, null, ex);
         }
 }
@@ -378,12 +404,12 @@ public class Arbol {
             }
     }
     
-    void GraficarTablaEstados(){
+    void GraficarTablaEstados(String numero){
         PrintWriter archivo;
         try {
             ArrayList<Estado>listauxEstados=new ArrayList<>(estadosListos);
             
-            archivo = new PrintWriter("TablaTransiciones.txt", "UTF-8");
+            archivo = new PrintWriter("TablaEstados"+numero+".dot", "UTF-8");
             archivo.print("digraph G  {\n node [shape=record, fontname=\"Arial\"];\n");
             String codigo="set1 [label = \"{ Estados ";
             for (int i = 0; i < listauxEstados.size()-1; i++) {
@@ -398,7 +424,7 @@ public class Arbol {
                         if(listauxEstados.get(j).getDetonadores().get(k)==tablasiguientes.i.get(i).getI()){
                             codigo+="| "+listauxEstados.get(j).getDetonadores().get(k);
                         }else{
-                            //codigo+="| ";
+                            codigo+="| ";
                         }
                     }
                     
@@ -408,9 +434,14 @@ public class Arbol {
             codigo+=" }\" ];\n}";
             archivo.print(codigo);
             archivo.close();
+            ProcessBuilder processBuilder = new ProcessBuilder();
+            processBuilder.command("cmd.exe", "/c","dot TablaEstados"+numero+".dot -Tpng -o TablaEstados"+numero+".png");
+            processBuilder.start();
         } catch (FileNotFoundException ex) {
             Logger.getLogger(Arbol.class.getName()).log(Level.SEVERE, null, ex);
         } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(Arbol.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
             Logger.getLogger(Arbol.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
         }
